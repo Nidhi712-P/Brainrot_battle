@@ -1,5 +1,3 @@
-# HabitTracker
-
 """
 Simple Habit Tracker
 --------------------
