@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz & Multi-Mini-Game Challenge</title>
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #16bac5;
+            --success: #2ec4b6;
+            --danger: #e71d36;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        p {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .score-board {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            color: var(--text);
+            border: 2px solid #e0e0e0;
+            text-align: left;
+            padding: 14px 18px;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background-color: #f0f4f8;
+        }
+
+        /* Feedback messaging */
+        .feedback {
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 24px;
+        }
+        .correct { color: var(--success); }
+        .incorrect { color: var(--danger); }
+
+        /* --- 1. SUDOKU STYLES --- */
+        #sudoku-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            width: 240px;
+            height: 240px;
+            margin: 20px auto;
+            background-color: var(--text);
+            border: 4px solid var(--text);
+            border-radius: 8px;
+        }
+
+        .sudoku-cell {
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .sudoku-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            outline: none;
+        }
+
+        /* 2x2 grid lines inside 4x4 */
+        .sudoku-cell:nth-child(2n) { border-right: 2px solid var(--text); }
+        .sudoku-cell:nth-child(4n) { border-right: none; }
+        .sudoku-cell:nth-child(n+5):nth-child(-n+8) { border-bottom: 2px solid var(--text); }
+
+        /* --- 2. SLIDING PUZZLE STYLES --- */
+        #sliding-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            width: 270px;
+            height: 270px;
+            margin: 20px auto;
+            background: #e0e0e0;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .tile {
+            background: var(--primary);
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .tile.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        /* --- 3. MEMORY MATCH STYLES --- */
+        #memory-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 300px;
+            margin: 20px auto;
+        }
+
+        .memory-card {
+            height: 70px;
+            background: var(--primary);
+            color: transparent;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s;
+        }
+
+        .memory-card.flipped, .memory-card.matched {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--text);
+            cursor: default;
+        }
+
+        /* --- 4. SPEED TEST STYLES --- */
+        #speed-target {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+
+        .ready-state { background-color: var(--danger); }
+        .go-state { background-color: var(--success); }
+        .wait-state { background-color: #ffb703; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="score-board">Score: <span id="total-score">0</span></div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="quiz-screen">
+        <h2 id="question-text">Question Text</h2>
+        <div id="options-container"></div>
+        <div id="quiz-feedback" class="feedback"></div>
+    </div>
+
+    <!-- 1. SUDOKU MINI-GAME -->
+    <div id="sudoku-screen" class="hidden">
+        <h2>Mini Sudoku Challenge</h2>
+        <p>Fill the empty cells so numbers 1 to 4 appear once per row, column, and 2x2 box.</p>
+        <div id="sudoku-board"></div>
+        <button onclick="checkSudoku()">Submit Solution</button>
+        <div id="sudoku-feedback" class="feedback"></div>
+    </div>
+
+    <!-- 2. SLIDING PUZZLE MINI-GAME -->
+    <div id="sliding-screen" class="hidden">
+        <h2>Sliding Puzzle Challenge</h2>
+        <p>Click adjacent tiles to slide them into numerical order (1 to 8).</p>
+        <div id="sliding-board"></div>
+        <div id="sliding-feedback" class="feedback"></div>
+    </div>
+
+    <!-- 3. MEMORY MATCH MINI-GAME -->
+    <div id="memory-screen" class="hidden">
+        <h2>Memory Match Challenge</h2>
+        <p>Find all 4 matching pairs of icons!</p>
+        <div id="memory-board"></div>
+        <div id="memory-feedback" class="feedback"></div>
+    </div>
+
+    <!-- 4. SPEED REACTION MINI-GAME -->
+    <div id="speed-screen" class="hidden">
+        <h2>Reaction Speed Challenge</h2>
+        <p id="speed-instruction">Click the circle when it turns GREEN!</p>
+        <div id="speed-target" class="ready-state" onclick="handleSpeedClick()">WAIT...</div>
+        <div id="speed-feedback" class="feedback"></div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="end-screen" class="hidden">
+        <h2>Quiz Complete! 🎉</h2>
+        <p>Final Score: <span id="final-score">0</span> points</p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+</div>
+
+<script>
+    // Game State Variables
+    let currentQuestion = 0;
+    let score = 0;
+
+    // Quiz Questions Data mapped to different mini-games
+    const quizData = [
+        {
+            question: "What is the square root of 144?",
+            options: ["10", "12", "14", "16"],
+            answer: 1,
+            gameType: "sudoku"
+        },
+        {
+            question: "Which country has the longest coastline in the world?",
+            options: ["Canada", "Russia", "Australia", "Indonesia"],
+            answer: 0,
+            gameType: "sliding"
+        },
+        {
+            question: "Who wrote the novel '1984'?",
+            options: ["Aldous Huxley", "J.R.R. Tolkien", "George Orwell", "Ray Bradbury"],
+            answer: 2,
+            gameType: "memory"
+        },
+        {
+            question: "What is the chemical symbol for Gold?",
+            options: ["Ag", "Au", "Fe", "Pb"],
+            answer: 1,
+            gameType: "speed"
+        }
+    ];
+
+    // Initialize Game
+    function initQuiz() {
+        if (currentQuestion >= quizData.length) {
+            showEndScreen();
+            return;
+        }
+
+        const data = quizData[currentQuestion];
+        document.getElementById('question-text').innerText = `Q${currentQuestion + 1}: ${data.question}`;
+        document.getElementById('quiz-feedback').innerText = '';
+        
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        data.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswer(idx);
+            optionsContainer.appendChild(btn);
+        });
+
+        showScreen('quiz-screen');
+    }
+
+    function handleAnswer(selectedIndex) {
+        const data = quizData[currentQuestion];
+        const feedback = document.getElementById('quiz-feedback');
+
+        if (selectedIndex === data.answer) {
+            score += 100;
+            updateScore();
+            feedback.className = 'feedback correct';
+            feedback.innerText = 'Correct! Unlocking mini-game...';
+            setTimeout(() => startMiniGame(data.gameType), 1200);
+        } else {
+            feedback.className = 'feedback incorrect';
+            feedback.innerText = 'Incorrect! Unlocking mini-game anyway...';
+            setTimeout(() => startMiniGame(data.gameType), 1200);
+        }
+    }
+
+    function updateScore() {
+        document.getElementById('total-score').innerText = score;
+    }
+
+    function showScreen(screenId) {
+        const screens = ['quiz-screen', 'sudoku-screen', 'sliding-screen', 'memory-screen', 'speed-screen', 'end-screen'];
+        screens.forEach(id => {
+            document.getElementById(id).classList.toggle('hidden', id !== screenId);
+        });
+    }
+
+    function startMiniGame(type) {
+        if (type === 'sudoku') initSudoku();
+        else if (type === 'sliding') initSliding();
+        else if (type === 'memory') initMemory();
+        else if (type === 'speed') initSpeed();
+    }
+
+    function nextQuestion() {
+        currentQuestion++;
+        initQuiz();
+    }
+
+    function showEndScreen() {
+        showScreen('end-screen');
+        document.getElementById('final-score').innerText = score;
+    }
+
+    function restartGame() {
+        score = 0;
+        currentQuestion = 0;
+        updateScore();
+        initQuiz();
+    }
+
+    /* -------------------------------------------------------------
+       1. SUDOKU MINI-GAME LOGIC (4x4)
+    ------------------------------------------------------------- */
+    const sudokuInitial = [
+        [1, 0, 0, 4],
+        [0, 4, 1, 0],
+        [0, 1, 3, 0],
+        [3, 0, 0, 2]
+    ];
+
+    const sudokuSolution = [
+        [1, 3, 2, 4],
+        [2, 4, 1, 3],
+        [4, 1, 3, 2],
+        [3, 2, 4, 1]
+    ];
+
+    function initSudoku() {
+        showScreen('sudoku-screen');
+        document.getElementById('sudoku-feedback').innerText = '';
+        const board = document.getElementById('sudoku-board');
+        board.innerHTML = '';
+
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'sudoku-cell';
+                const val = sudokuInitial[r][c];
+
+                if (val !== 0) {
+                    cell.innerText = val;
+                } else {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+                    cell.appendChild(input);
+                }
+                board.appendChild(cell);
+            }
+        }
+    }
+
+    function checkSudoku() {
+        const inputs = document.querySelectorAll('#sudoku-board input');
+        let isCorrect = true;
+
+        inputs.forEach(input => {
+            const r = input.dataset.row;
+            const c = input.dataset.col;
+            const val = parseInt(input.value, 10);
+
+            if (val !== sudokuSolution[r][c]) {
+                isCorrect = false;
+            }
+        });
+
+        const feedback = document.getElementById('sudoku-feedback');
+        if (isCorrect) {
+            score += 50;
+            updateScore();
+            feedback.className = 'feedback correct';
+            feedback.innerText = 'Puzzle Solved! (+50 pts)';
+            setTimeout(nextQuestion, 1500);
+        } else {
+            feedback.className = 'feedback incorrect';
+            feedback.innerText = 'Incorrect solution. Try again!';
+        }
+    }
+
+    /* -------------------------------------------------------------
+       2. SLIDING PUZZLE MINI-GAME LOGIC
+    ------------------------------------------------------------- */
+    let tiles = [1, 2, 3, 4, 5, 6, 7, 0, 8]; // Solvable configuration with 1 swap needed
+
+    function initSliding() {
+        showScreen('sliding-screen');
+        document.getElementById('sliding-feedback').innerText = '';
+        renderSlidingBoard();
+    }
+
+    function renderSlidingBoard() {
+        const board = document.getElementById('sliding-board');
+        board.innerHTML = '';
+
+        tiles.forEach((num, index) => {
+            const tile = document.createElement('div');
+            tile.className = 'tile' + (num === 0 ? ' empty' : '');
+            tile.innerText = num === 0 ? '' : num;
+            tile.onclick = () => moveTile(index);
+            board.appendChild(tile);
+        });
+    }
+
+    function moveTile(index) {
+        const emptyIndex = tiles.indexOf(0);
+        const validMoves = [
+            index - 1, index + 1, // Left, Right
+            index - 3, index + 3  // Up, Down
+        ];
+
+        // Ensure left/right moves don't wrap across rows
+        const isSameRow = Math.floor(index / 3) === Math.floor(emptyIndex / 3);
+        const isSameCol = index % 3 === emptyIndex % 3;
+
+        if ((isSameRow && Math.abs(index - emptyIndex) === 1) || (isSameCol && Math.abs(index - emptyIndex) === 3)) {
+            // Swap tiles
+            [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+            renderSlidingBoard();
+            checkSlidingWin();
+        }
+    }
+
+    function checkSlidingWin() {
+        const winState = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+        const isWin = tiles.every((val, idx) => val === winState[idx]);
+
+        if (isWin) {
+            score += 50;
+            updateScore();
+            const feedback = document.getElementById('sliding-feedback');
+            feedback.className = 'feedback correct';
+            feedback.innerText = 'Puzzle Solved! (+50 pts)';
+            setTimeout(nextQuestion, 1500);
+        }
+    }
+
+    /* -------------------------------------------------------------
+       3. MEMORY MATCH MINI-GAME LOGIC
+    ------------------------------------------------------------- */
+    const icons = ['⭐', '⭐', '🎈', '🎈', '🚀', '🚀', '🎁', '🎁'];
+    let flippedCards = [];
+    let matchedPairs = 0;
+
+    function initMemory() {
+        showScreen('memory-screen');
+        document.getElementById('memory-feedback').innerText = '';
+        matchedPairs = 0;
+        flippedCards = [];
+
+        // Shuffle icons
+        const shuffled = [...icons].sort(() => Math.random() - 0.5);
+        const board = document.getElementById('memory-board');
+        board.innerHTML = '';
+
+        shuffled.forEach((icon) => {
+            const card = document.createElement('div');
+            card.className = 'memory-card';
+            card.dataset.icon = icon;
+            card.innerText = icon;
+            card.onclick = () => flipCard(card);
+            board.appendChild(card);
+        });
+    }
+
+    function flipCard(card) {
+        if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) {
+            return;
+        }
+
+        card.classList.add('flipped');
+        flippedCards.push(card);
+
+        if (flippedCards.length === 2) {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.icon === card2.dataset.icon) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                flippedCards = [];
+                matchedPairs++;
+
+                if (matchedPairs === 4) {
+                    score += 50;
+                    updateScore();
+                    const feedback = document.getElementById('memory-feedback');
+                    feedback.className = 'feedback correct';
+                    feedback.innerText = 'All Matches Found! (+50 pts)';
+                    setTimeout(nextQuestion, 1500);
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                }, 800);
+            }
+        }
+    }
+
+    /* -------------------------------------------------------------
+       4. SPEED REACTION MINI-GAME LOGIC
+    ------------------------------------------------------------- */
+    let speedStartTime = 0;
+    let speedTimeout = null;
+    let isTargetGreen = false;
+
+    function initSpeed() {
+        showScreen('speed-screen');
+        const target = document.getElementById('speed-target');
+        const feedback = document.getElementById('speed-feedback');
+        
+        feedback.innerText = '';
+        target.className = 'ready-state';
+        target.innerText = 'WAIT...';
+        isTargetGreen = false;
+
+        const randomDelay = Math.floor(Math.random() * 2000) + 2000; // 2-4 seconds delay
+
+        speedTimeout = setTimeout(() => {
+            target.className = 'go-state';
+            target.innerText = 'CLICK NOW!';
+            speedStartTime = Date.now();
+            isTargetGreen = true;
+        }, randomDelay);
+    }
+
+    function handleSpeedClick() {
+        const feedback = document.getElementById('speed-feedback');
+        
+        if (!isTargetGreen) {
+            clearTimeout(speedTimeout);
+            feedback.className = 'feedback incorrect';
+            feedback.innerText = 'Too early! Restarting speed test...';
+            setTimeout(initSpeed, 1200);
+        } else {
+            const reactionTime = Date.now() - speedStartTime;
+            score += 50;
+            updateScore();
+            feedback.className = 'feedback correct';
+            feedback.innerText = `Great reaction! ${reactionTime} ms (+50 pts)`;
+            isTargetGreen = false;
+            setTimeout(nextQuestion, 1500);
+        }
+    }
+
+    // Start quiz on page load
+    initQuiz();
+</script>
+
+</body>
+</html>
